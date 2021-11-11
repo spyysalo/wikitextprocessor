@@ -10,19 +10,20 @@ import html
 import traceback
 import subprocess
 
+from .parserfns import Namespace, add_ns, namespaces
+
 # These XML tags are ignored when parsing.
 ignore_xml_tags = set(["sha1", "comment", "username", "timestamp",
                        "sitename", "dbname", "base", "generator", "case",
                        "ns", "restrictions", "contributor", "username",
                        "minor", "parentid", "namespaces", "revision",
                        "siteinfo", "mediawiki",
-                       "id", "revision", "namespace", "format",
+                       "id", "revision", "format",
                        # "model",
 ])
 
 # Other tags are ignored inside these tags.
 xml_stack_ignore = ("contributor",)
-
 
 class DumpParser(object):
     """This class is used for XML parsing the MediaWiki dump file."""
@@ -64,6 +65,12 @@ tag_re = re.compile(
 arg_re = re.compile(
     rb"""([^"'>/=\s]+)(\s*=\s*("[^"]*"|'[^']*'|[^ \t\n"'`=<>]*))?"""
 )
+
+
+def _register_namespace(id_, name, attr):
+    # XXX use "case" and possible other attributes
+    add_ns(namespaces, Namespace(id=id_, name=name))
+
 
 def make_iter(f):
     dp = DumpParser()
@@ -124,6 +131,10 @@ def make_iter(f):
             return dp.model, dp.title, dp.text
         elif tag == "model":
             dp.model = data
+        elif tag == "namespace":
+            attrs = parse_attrs(dp.args)
+            id_ = int(attrs.pop("key"))
+            _register_namespace(id_, data, attrs)
         else:
             attrs = parse_attrs(dp.args)
             print("UNSUPPORTED", tag, len(data), attrs)
@@ -228,6 +239,6 @@ def process_dump(ctx, path, page_handler):
         sys.stdout.flush()
     ctx.analyze_templates()
 
-# XXX parse <namespaces> and use that in both Python and Lua code
+# XXX use namespaces in Lua code
 
 # XXX parse <case> to determine whether titles are case-sensitive

@@ -16,7 +16,8 @@ import collections
 import urllib.parse
 import html.entities
 import multiprocessing
-from .parserfns import (PARSER_FUNCTIONS, call_parser_function, tag_fn)
+from .parserfns import (PARSER_FUNCTIONS, call_parser_function, tag_fn,
+                        template_ns_name)
 from .wikihtml import ALLOWED_HTML_TAGS
 from .luaexec import call_lua_sandbox
 from .parser import parse_encoded, NodeKind
@@ -298,8 +299,8 @@ class Wtp(object):
         uppercase and replacing underscores by spaces and sequences of
         whitespace by a single whitespace."""
         assert isinstance(name, str)
-        if name.lower().startswith("template:"):
-            name = name[9:]
+        if name.lower().startswith(template_ns_name().lower()+":"):
+            name = name[len(template_ns_name()+":"):]
         name = re.sub(r"_", " ", name)
         name = re.sub(r"\s+", " ", name)
         name = re.sub(r"\(", "%28", name)
@@ -307,8 +308,8 @@ class Wtp(object):
         name = re.sub(r"&", "%26", name)
         name = re.sub(r"\+", "%2B", name)
         name = name.strip()
-        #if name:
-        #    name = name[0].upper() + name[1:]
+        if name:
+            name = name[0].upper() + name[1:]
         return name
 
     def _canonicalize_parserfn_name(self, name):
@@ -534,7 +535,7 @@ class Wtp(object):
 
         if transient:
             self.transient_pages[title] = (title, model, text)
-            if (title.startswith("Template:") and
+            if (title.startswith(template_ns_name()+":") and
                 not title.endswith("/documentation") and
                 not title.endswith("/testcases")):
                 name = self._canonicalize_template_name(title)
@@ -571,7 +572,7 @@ class Wtp(object):
         if model == "redirect":
             self.redirects[title] = text
             return
-        if not title.startswith("Template:"):
+        if not title.startswith(template_ns_name()+":"):
             return
         if title.endswith("/documentation"):
             return
@@ -726,10 +727,10 @@ class Wtp(object):
 
         # Copy template definitions to redirects to them
         for k, v in self.redirects.items():
-            if not k.startswith("Template:"):
+            if not k.startswith(template_ns_name()+":"):
                 # print("Unhandled redirect src", k)
                 continue
-            if not v.startswith("Template:"):
+            if not v.startswith(template_ns_name()+":"):
                 # print("Unhandled redirect dst", v)
                 continue
             k = self._canonicalize_template_name(k)
@@ -1156,6 +1157,7 @@ class Wtp(object):
                         # Expand the body using the calling template/page as
                         # the parent frame for any parserfn calls
                         new_title = tname.strip()
+                        # XXX should these be the namespaces from siteinfo?
                         for prefix in ("Media", "Special", "Main", "Talk",
                                        "User",
                                        "User_talk", "Project", "Project_talk",
@@ -1168,7 +1170,7 @@ class Wtp(object):
                             if tname.startswith(prefix + ":"):
                                 break
                         else:
-                            new_title = "Template:" + new_title
+                            new_title = template_ns_name+":"+new_title
                         new_parent = (new_title, ht)
                         # XXX no real need to expand here, it will expanded on
                         # next iteration anyway (assuming parent unchanged)

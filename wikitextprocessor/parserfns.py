@@ -605,7 +605,7 @@ class Namespace(object):
                  isIncludable=False,
                  isMovable=False, isSubject=False, isTalk=False,
                  name="", subject=None, talk=None):
-        assert name
+        assert name is not None
         assert id is not None
         self.aliases = aliases
         self.canonicalName = canonicalName
@@ -664,6 +664,9 @@ category_ns.talk = category_talk_ns
 module_ns.talk = module_talk_ns
 
 namespaces = {}
+
+def template_ns_name():
+    return namespaces[10].name
 
 def add_ns(t, ns):
    t[ns.id] = ns
