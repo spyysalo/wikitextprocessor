@@ -1170,7 +1170,7 @@ class Wtp(object):
                             if tname.startswith(prefix + ":"):
                                 break
                         else:
-                            new_title = template_ns_name+":"+new_title
+                            new_title = template_ns_name()+":"+new_title
                         new_parent = (new_title, ht)
                         # XXX no real need to expand here, it will expanded on
                         # next iteration anyway (assuming parent unchanged)
