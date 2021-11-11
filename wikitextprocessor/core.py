@@ -606,7 +606,7 @@ class Wtp(object):
         prev = body
         while True:
             unpaired_text = re.sub(
-                r"(?s)(^|\n)\{\|([^\n]|\n+[^{|]|\n+\|[^}]|\n+\{[^|])*?\n+\|\}",
+                r"(?s)(^|\n)\{\|([^\n]|\n+[^{|\n]|\n+\|[^}\n]|\n+\{[^|\n])*?\n+\|\}",
                 r"", prev)
             if unpaired_text == prev:
                 break
