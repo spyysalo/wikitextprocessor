@@ -17,7 +17,7 @@ import urllib.parse
 import html.entities
 import multiprocessing
 from .parserfns import (PARSER_FUNCTIONS, call_parser_function, tag_fn,
-                        template_ns_name)
+                        template_ns_name, module_ns_name)
 from .wikihtml import ALLOWED_HTML_TAGS
 from .luaexec import call_lua_sandbox
 from .parser import parse_encoded, NodeKind
@@ -301,6 +301,11 @@ class Wtp(object):
         assert isinstance(name, str)
         if name.lower().startswith(template_ns_name().lower()+":"):
             name = name[len(template_ns_name()+":"):]
+        if name.lower().startswith(module_ns_name().lower()+":"):
+            # capitalize first letter of page name in namespace
+            pagename = name[len(module_ns_name()+":"):]
+            pagename = pagename[0].upper() + pagename[1:]
+            name = module_ns_name() + ":" + pagename
         name = re.sub(r"_", " ", name)
         name = re.sub(r"\s+", " ", name)
         name = re.sub(r"\(", "%28", name)

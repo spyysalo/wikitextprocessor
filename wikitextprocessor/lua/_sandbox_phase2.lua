@@ -137,7 +137,7 @@ end
 -- in calls from Python.  Python code must keep in mind that those
 -- arguments and any functions and data structures in them can be
 -- accessed, called, and modified by hostile code.
-local function _lua_invoke(mod_name, fn_name, frame, page_title, timeout)
+local function _lua_invoke(mod_name, fn_name, mod_ns, frame, page_title, timeout)
    -- Initialize frame and parent frame
    local pframe = frame:getParent()
    -- print("lua_invoke", mod_name, fn_name)
@@ -171,8 +171,9 @@ local function _lua_invoke(mod_name, fn_name, frame, page_title, timeout)
    -- loading the module, as the module could refer to, e.g., page title
    -- during loading.
    local mod, success
-   if string.sub(mod_name, 1, 7) ~= "Module:" then
-      local mod1 = "Module:" .. mod_name
+
+   if string.sub(mod_name, 1, string.len(mod_ns)+1) == mod_ns .. ":" then
+      local mod1 = mod_ns .. ":" .. mod_name
       mod = _cached_mod(mod1)
       if not mod then
          local initfn, msg = _new_loader(mod1)

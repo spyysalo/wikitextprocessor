@@ -13,7 +13,8 @@ import pkg_resources
 #from lru import LRU
 import lupa
 from lupa import LuaRuntime
-from .parserfns import PARSER_FUNCTIONS, call_parser_function, tag_fn
+from .parserfns import (PARSER_FUNCTIONS, call_parser_function, tag_fn,
+                        module_ns_name)
 from .languages import ALL_LANGUAGES
 
 # List of search paths for Lua libraries.
@@ -94,12 +95,12 @@ def lua_loader(ctx, modname):
     # print("LUA_LOADER IN PYTHON:", modname)
     assert isinstance(modname, str)
     modname = modname.strip()
-    if modname.startswith("Module:"):
+    if modname.startswith(module_ns_name()+":"):
         # Canonicalize the name
         modname = ctx._canonicalize_template_name(modname)
 
         # First try to load it as a module
-        if modname.startswith("Module:_"):
+        if modname.startswith(module_ns_name()+":_"):
             # Module names starting with _ are considered internal and cannot be
             # loaded from the dump file for security reasons.  This is to ensure
             # that the sandbox always gets loaded from a local file.
@@ -125,6 +126,12 @@ def lua_loader(ctx, modname):
                 with open(p, "r", encoding="utf-8") as f:
                     data = f.read()
                 break
+
+    if data is None:
+        # As a fallback, try adding in the module namespace
+        modname = module_ns_name() + ":" + modname
+        modname = ctx._canonicalize_template_name(modname)
+        data = ctx.read_by_title(modname)
 
     if data is None:
         # We did not find the module
@@ -569,7 +576,8 @@ def call_lua_sandbox(ctx, invoke_args, expander, parent, timeout):
     stack_len = len(ctx.expand_stack)
     ctx.expand_stack.append("Lua:{}:{}()".format(modname, modfn))
     try:
-        ret = ctx.lua_invoke(modname, modfn, frame, ctx.title, timeout)
+        modns = module_ns_name()
+        ret = ctx.lua_invoke(modname, modfn, modns, frame, ctx.title, timeout)
         if not isinstance(ret, (list, tuple)):
             ok, text = ret, ""
         elif len(ret) == 1:

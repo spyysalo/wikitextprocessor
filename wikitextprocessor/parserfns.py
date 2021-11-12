@@ -668,6 +668,9 @@ namespaces = {}
 def template_ns_name():
     return namespaces[10].name
 
+def module_ns_name():
+    return namespaces[828].name
+
 def add_ns(t, ns):
    t[ns.id] = ns
 
